@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/space_harinezumi
+space_harinezumi.so
+space_harinezumi.dylib
+space_harinezumi.dll
+space_harinezumi.a
+space_harinezumi.lib
+space_harinezumi-test-*
+*.exe
+*.o
+*.obj
+*.lst

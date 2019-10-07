@@ -1,0 +1,12 @@
+{
+	"authors": [
+		"user"
+	],
+	"dependencies": {
+		"asdf": "~>0.5.2",
+		"derelict-sdl2": "~>2.1.4"
+	},
+	"description": "A minimal D application.",
+	"license": "proprietary",
+	"name": "space_harinezumi"
+}
