@@ -11,7 +11,12 @@ public:
 
     int opIndex(int y, int x) const pure
     {
-        return data[y * width + x];
+        auto p = y * width + x;
+        if (p < 0 || data.length <= p)
+        {
+            return -1;
+        }
+        return data[p];
     }
 }
 
@@ -61,6 +66,17 @@ class Field : GameObject
 private:
     SDL_Surface* mapsurface;
     Map map;
+
+    auto tileheight() const pure
+    {
+        return this.map.mapinfo.tileheight;
+    }
+
+    auto tilewidth() const pure
+    {
+        return this.map.mapinfo.tilewidth;
+    }
+
 public:
     this(Map map)
     {
@@ -77,10 +93,11 @@ public:
                     auto chipindex = layer[y, x];
                     if (chipindex > 0)
                     {
-                        auto src = SDL_Rect(map.mapinfo.tilewidth * chipindex,
-                                0, map.mapinfo.tilewidth, map.mapinfo.tileheight);
-                        auto dst = SDL_Rect(map.mapinfo.tilewidth * x, map.mapinfo.tileheight * y,
-                                map.mapinfo.tilewidth, map.mapinfo.tileheight);
+                        chipindex--;
+                        auto src = SDL_Rect(this.tilewidth * chipindex, 0,
+                                this.tilewidth, this.tileheight);
+                        auto dst = SDL_Rect(this.tilewidth * x,
+                                this.tileheight * y, this.tilewidth, this.tileheight);
                         SDL_BlitSurface(map.chipsurface, &src, this.mapsurface, &dst);
                     }
                 }
@@ -94,8 +111,69 @@ public:
 
     Image getImage()
     {
-
         SDL_Rect pos = SDL_Rect(0, 0, this.mapsurface.w, this.mapsurface.h);
         return Image(this.mapsurface, pos, pos);
+    }
+
+    enum
+    {
+        COLLIDE_TOP = 1,
+        COLLIDE_BOTTOM = 2,
+        COLLIDE_LEFT = 4,
+        COLLIDE_RIGHT = 8,
+    }
+
+    /// check collision for rect and map
+    auto checkCollision(SDL_Rect rect)
+    {
+        // get overlapping chips
+        int y_start = rect.y / this.tileheight;
+        int y_end = (rect.y + rect.h) / this.tileheight;
+        int x_start = rect.x / this.tilewidth;
+        int x_end = (rect.x + rect.w) / this.tilewidth;
+
+        uint r = 0;
+        foreach (l; this.map.mapinfo.layers)
+        {
+            foreach (x; x_start .. x_end)
+            {
+
+                auto chip = l[y_start, x];
+                if (chip > 0)
+                {
+                    r |= COLLIDE_TOP;
+                }
+
+                chip = l[y_end, x];
+                if (chip > 0)
+                {
+                    r |= COLLIDE_BOTTOM;
+                }
+
+                if (r & (COLLIDE_TOP | COLLIDE_BOTTOM))
+                {
+                    break;
+                }
+            }
+            foreach (y; y_start .. y_end)
+            {
+                auto chip = l[y, x_start];
+                if (chip > 0)
+                {
+                    r |= COLLIDE_LEFT;
+                }
+
+                chip = l[y, x_end];
+                if (chip > 0)
+                {
+                    r |= COLLIDE_RIGHT;
+                }
+                if (r & (COLLIDE_LEFT | COLLIDE_RIGHT))
+                {
+                    break;
+                }
+            }
+        }
+        return r;
     }
 }

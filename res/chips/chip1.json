@@ -1,9 +1,9 @@
 [
 	{
-		"is_rigid": false
+		"is_rigid": true
 	},
 	{
-		"is_rigid": false
+		"is_rigid": true
 	},
 	{
 		"is_rigid": true

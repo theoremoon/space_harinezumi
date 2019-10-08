@@ -17,9 +17,9 @@ private:
     int speed; /// animation speed
     long counter;
 
+public:
     int x; /// x position
     int y; /// y position
-public:
     this(int x, int y, SDL_Surface* img, int width, int speed)
     {
         this.img = img;
@@ -62,6 +62,11 @@ public:
         dst.h = this.img.h;
         return Image(this.img, src, dst);
     }
+
+    SDL_Rect getRect()
+    {
+        return SDL_Rect(this.x, this.y, this.width, this.img.h);
+    }
 }
 
 void main()
@@ -77,6 +82,16 @@ void main()
             break;
         }
         player.update();
+        player.y += 5;
+        auto collision = field.checkCollision(player.getRect);
+        if (collision & Field.COLLIDE_BOTTOM)
+        {
+            player.y -= 5;
+        }
+        if (collision & Field.COLLIDE_RIGHT)
+        {
+            player.x--;
+        }
         field.update();
         Window.draw(field);
         Window.draw(player);
