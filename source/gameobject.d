@@ -13,4 +13,8 @@ interface GameObject
 {
     void update();
     Image getImage();
+    SDL_Rect rect();
+    void onCollide(GameObject o, int direction);
+    string[] tags();
+    int level();
 }

@@ -105,16 +105,9 @@ public:
         SDL_RenderClear(instance.renderer);
     }
 
-    static void draw(GameObject obj)
+    static SDL_Renderer* getRenderer()
     {
-        auto img = obj.getImage();
-        SDL_Texture* t = SDL_CreateTextureFromSurface(instance.renderer, img.img);
-        if (t is null)
-        {
-            // TODO: logging
-            return;
-        }
-        SDL_RenderCopy(instance.renderer, t, &img.src, &img.dst);
-        SDL_DestroyTexture(t);
+        return instance.renderer;
     }
+
 }

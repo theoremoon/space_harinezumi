@@ -109,10 +109,29 @@ public:
     {
     }
 
+    void onCollide(GameObject o, int direction)
+    {
+    }
+
     Image getImage()
     {
         SDL_Rect pos = SDL_Rect(0, 0, this.mapsurface.w, this.mapsurface.h);
         return Image(this.mapsurface, pos, pos);
+    }
+
+    SDL_Rect rect()
+    {
+        return SDL_Rect();
+    }
+
+    int level()
+    {
+        return -1;
+    }
+
+    string[] tags()
+    {
+        return ["field"];
     }
 
     enum

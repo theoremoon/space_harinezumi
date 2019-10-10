@@ -1,10 +1,12 @@
 import std.stdio;
 import std.file;
+import std.algorithm;
 import asdf;
 import window;
 import derelict.sdl2.sdl;
 import derelict.sdl2.image;
 import gameobject;
+import scene;
 import field;
 
 class Sprite : GameObject
@@ -16,6 +18,9 @@ private:
     int number; /// number of images in a sprite
     int speed; /// animation speed
     long counter;
+
+    int last_x;
+    int last_y;
 
 public:
     int x; /// x position
@@ -34,16 +39,19 @@ public:
 
     void update()
     {
+        this.last_x = x;
+        this.last_y = y;
         if (Window.key(SDL_SCANCODE_LEFT) > 0)
         {
-            this.x--;
+            this.x -= 3;
             this.counter += 5;
         }
         if (Window.key(SDL_SCANCODE_RIGHT) > 0)
         {
-            this.x++;
+            this.x += 3;
             this.counter += 5;
         }
+        this.y += 5;
         this.counter++;
     }
 
@@ -63,38 +71,55 @@ public:
         return Image(this.img, src, dst);
     }
 
-    SDL_Rect getRect()
+    int level()
+    {
+        return 1;
+    }
+
+    string[] tags()
+    {
+        return [];
+    }
+
+    SDL_Rect rect()
     {
         return SDL_Rect(this.x, this.y, this.width, this.img.h);
+    }
+
+    void onCollide(GameObject o, int direction)
+    {
+        if (o.tags.canFind("field"))
+        {
+            if (direction & Field.COLLIDE_BOTTOM)
+            {
+                this.y = this.last_y;
+            }
+            if (direction & (Field.COLLIDE_RIGHT | Field.COLLIDE_LEFT))
+            {
+                this.x = this.last_x;
+            }
+        }
+        else
+        {
+        }
     }
 }
 
 void main()
 {
     Window.init("Hedgehog", 800, 600);
-    auto player = new Sprite(0, 0, IMG_Load("res/hog.png"), 32, 60);
-    auto field = new Field(Map(IMG_Load("res/chipset.png"), readText("res/maps/map1.json")
-            .deserialize!MapInfo, readText("res/chips/chip1.json").deserialize!(ChipInfo[])));
+    auto mainscene = new Scene();
+    mainscene.addObject(new Sprite(0, 0, IMG_Load("res/hog.png"), 32, 60));
+    mainscene.addObject(new Field(Map(IMG_Load("res/chipset.png"), readText("res/maps/map1.json")
+            .deserialize!MapInfo, readText("res/chips/chip1.json").deserialize!(ChipInfo[]))));
     while (Window.act())
     {
         if (Window.key(SDL_SCANCODE_Q))
         {
             break;
         }
-        player.update();
-        player.y += 5;
-        auto collision = field.checkCollision(player.getRect);
-        if (collision & Field.COLLIDE_BOTTOM)
-        {
-            player.y -= 5;
-        }
-        if (collision & Field.COLLIDE_RIGHT)
-        {
-            player.x--;
-        }
-        field.update();
-        Window.draw(field);
-        Window.draw(player);
+        mainscene.update();
+        mainscene.draw(Window.getRenderer);
         Window.render();
     }
 }
