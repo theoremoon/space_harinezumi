@@ -1,6 +1,7 @@
 module gameobject;
 import derelict.sdl2.sdl;
 import std.typecons;
+import tag;
 
 struct Image
 {
@@ -15,6 +16,6 @@ interface GameObject
     Image getImage();
     SDL_Rect rect();
     void onCollide(GameObject o, int direction);
-    string[] tags();
+    Tag[] tags();
     int level();
 }

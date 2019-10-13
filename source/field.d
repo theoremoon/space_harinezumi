@@ -1,6 +1,7 @@
 module field;
 import gameobject;
 import derelict.sdl2.sdl;
+import tag;
 
 struct MapLayer
 {
@@ -129,9 +130,9 @@ public:
         return -1;
     }
 
-    string[] tags()
+    override Tag[] tags()
     {
-        return ["field"];
+        return [Tag.FIELD];
     }
 
     enum

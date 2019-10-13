@@ -7,6 +7,7 @@ import derelict.sdl2.sdl;
 import derelict.sdl2.image;
 import gameobject;
 import scene;
+import tag;
 import field;
 
 interface AssetLoader
@@ -88,9 +89,9 @@ public:
         return 1;
     }
 
-    override string[] tags()
+    override Tag[] tags()
     {
-        return ["enemy"];
+        return [Tag.OBJECT];
     }
 
     override void update()
@@ -115,8 +116,7 @@ public:
 
     void onCollide(GameObject o, int direction)
     {
-        // do nothing
-        if (o.tags.canFind("field"))
+        if (o.tags.canFind(Tag.FIELD))
         {
             if (direction & Field.COLLIDE_BOTTOM)
             {
@@ -149,9 +149,9 @@ public:
         return 1;
     }
 
-    override string[] tags()
+    override Tag[] tags()
     {
-        return [];
+        return [Tag.OBJECT];
     }
 
     /// task on every frame
@@ -189,8 +189,7 @@ public:
 
     void onCollide(GameObject o, int direction)
     {
-        // do nothing
-        if (o.tags.canFind("field"))
+        if (o.tags.canFind(Tag.FIELD))
         {
             if (direction & Field.COLLIDE_BOTTOM)
             {
@@ -200,6 +199,11 @@ public:
             {
                 this.rigid.x = this.last_x;
             }
+        }
+
+        if (o.tags.canFind(Tag.OBJECT))
+        {
+            writeln("COLLODE!");
         }
     }
 }
