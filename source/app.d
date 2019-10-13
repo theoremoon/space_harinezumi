@@ -9,98 +9,124 @@ import gameobject;
 import scene;
 import field;
 
-class Sprite : GameObject
+class AssetLoader
+{
+public:
+    SDL_Surface* loadImage(string path)
+    {
+        import std.string : toStringz;
+
+        return IMG_Load(path.toStringz);
+    }
+}
+
+class Sprite
 {
 private:
     SDL_Surface* img;
-
-    int width; /// width of one sprite image
-    int number; /// number of images in a sprite
-    int speed; /// animation speed
-    long counter;
-
-    int last_x;
-    int last_y;
-
+    uint sprite_width;
+    uint animation_frame;
+    uint current_frame;
 public:
-    int x; /// x position
-    int y; /// y position
-    this(int x, int y, SDL_Surface* img, int width, int speed)
+    this(SDL_Surface* img, uint sprite_width, uint animation_frame)
     {
         this.img = img;
-        this.number = img.w / width;
-        this.width = width;
-        this.speed = speed;
-        this.counter = 0;
-
-        this.x = x;
-        this.y = y;
+        this.sprite_width = sprite_width;
+        this.animation_frame = animation_frame;
+        this.current_frame = 0;
     }
 
-    void update()
+    int sprite_number()
     {
-        this.last_x = x;
-        this.last_y = y;
-        if (Window.key(SDL_SCANCODE_LEFT) > 0)
-        {
-            this.x -= 3;
-            this.counter += 5;
-        }
-        if (Window.key(SDL_SCANCODE_RIGHT) > 0)
-        {
-            this.x += 3;
-            this.counter += 5;
-        }
-        this.y += 5;
-        this.counter++;
+        return this.img.w / this.sprite_width;
     }
 
+    /// Return sprite with empty dst
     Image getImage()
     {
-        SDL_Rect src;
-        src.x = this.width * cast(int)((this.counter / this.speed) % this.number);
-        src.y = 0;
-        src.w = this.width;
-        src.h = this.img.h;
-
-        SDL_Rect dst;
-        dst.x = this.x;
-        dst.y = this.y;
-        dst.w = this.width;
-        dst.h = this.img.h;
-        return Image(this.img, src, dst);
+        int x = this.sprite_width * cast(int)(
+                (this.current_frame / this.animation_frame) % this.sprite_number);
+        return Image(this.img, SDL_Rect(x, 0, this.sprite_width, this.img.h),
+                SDL_Rect(0, 0, 0, 0));
     }
 
-    int level()
+    /// step one frame
+    void step(int count)
+    {
+        this.current_frame += count;
+    }
+}
+
+class Player : GameObject
+{
+private:
+    Sprite sprite;
+    SDL_Rect rigid;
+    int last_x;
+    int last_y;
+public:
+    this(int x, int y, AssetLoader loader)
+    {
+        this.sprite = new Sprite(loader.loadImage("res/hog.png"), 32, 8);
+        this.rigid = SDL_Rect(x, y, 32, 32);
+    }
+
+    override int level()
     {
         return 1;
     }
 
-    string[] tags()
+    override string[] tags()
     {
         return [];
     }
 
-    SDL_Rect rect()
+    /// task on every frame
+    override void update()
     {
-        return SDL_Rect(this.x, this.y, this.width, this.img.h);
+        this.sprite.step(1);
+        this.last_x = this.rigid.x;
+        this.last_y = this.rigid.y;
+
+        if (Window.key(SDL_SCANCODE_LEFT) > 0)
+        {
+            this.rigid.x -= 3;
+            this.sprite.step(5);
+        }
+        if (Window.key(SDL_SCANCODE_RIGHT) > 0)
+        {
+            this.rigid.x += 3;
+            this.sprite.step(5);
+        }
+
+        this.rigid.y += 5;
+    }
+
+    override Image getImage()
+    {
+        auto img = this.sprite.getImage();
+        img.dst = this.rigid;
+        return img;
+    }
+
+    override SDL_Rect rect()
+    {
+        return this.rigid;
     }
 
     void onCollide(GameObject o, int direction)
     {
+        // do nothing
         if (o.tags.canFind("field"))
         {
             if (direction & Field.COLLIDE_BOTTOM)
             {
-                this.y = this.last_y;
+                this.rigid.y = this.last_y;
             }
             if (direction & (Field.COLLIDE_RIGHT | Field.COLLIDE_LEFT))
             {
-                this.x = this.last_x;
+                this.rigid.x = this.last_x;
             }
-        }
-        else
-        {
         }
     }
 }
@@ -109,7 +135,8 @@ void main()
 {
     Window.init("Hedgehog", 800, 600);
     auto mainscene = new Scene();
-    mainscene.addObject(new Sprite(0, 0, IMG_Load("res/hog.png"), 32, 60));
+    auto loader = new AssetLoader();
+    mainscene.addObject(new Player(0, 0, loader));
     mainscene.addObject(new Field(Map(IMG_Load("res/chipset.png"), readText("res/maps/map1.json")
             .deserialize!MapInfo, readText("res/chips/chip1.json").deserialize!(ChipInfo[]))));
     while (Window.act())
