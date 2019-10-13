@@ -9,14 +9,26 @@ import gameobject;
 import scene;
 import field;
 
-class AssetLoader
+interface AssetLoader
 {
+    abstract SDL_Surface* loadImage(string name);
+}
+
+class DefaultLoader : AssetLoader
+{
+private:
+    string prefix;
 public:
-    SDL_Surface* loadImage(string path)
+    this(string resource_directory)
+    {
+        this.prefix = resource_directory;
+    }
+
+    override SDL_Surface* loadImage(string name)
     {
         import std.string : toStringz;
 
-        return IMG_Load(path.toStringz);
+        return IMG_Load((prefix ~ name).toStringz);
     }
 }
 
@@ -51,9 +63,70 @@ public:
     }
 
     /// step one frame
-    void step(int count)
+    void step(int count = 1)
     {
         this.current_frame += count;
+    }
+}
+
+class Hopper : GameObject
+{
+private:
+    Sprite sprite;
+    SDL_Rect rigid;
+    int last_x;
+    int last_y;
+public:
+    this(int x, int y, AssetLoader loader)
+    {
+        this.sprite = new Sprite(loader.loadImage("hopper.png"), 16, 16);
+        this.rigid = SDL_Rect(x, y, 16, 16);
+    }
+
+    override int level()
+    {
+        return 1;
+    }
+
+    override string[] tags()
+    {
+        return ["enemy"];
+    }
+
+    override void update()
+    {
+        this.sprite.step();
+        this.last_x = this.rigid.x;
+        this.last_y = this.rigid.y;
+        this.rigid.y += 5;
+    }
+
+    override Image getImage()
+    {
+        auto img = this.sprite.getImage();
+        img.dst = this.rigid;
+        return img;
+    }
+
+    override SDL_Rect rect()
+    {
+        return this.rigid;
+    }
+
+    void onCollide(GameObject o, int direction)
+    {
+        // do nothing
+        if (o.tags.canFind("field"))
+        {
+            if (direction & Field.COLLIDE_BOTTOM)
+            {
+                this.rigid.y = this.last_y;
+            }
+            if (direction & (Field.COLLIDE_RIGHT | Field.COLLIDE_LEFT))
+            {
+                this.rigid.x = this.last_x;
+            }
+        }
     }
 }
 
@@ -67,7 +140,7 @@ private:
 public:
     this(int x, int y, AssetLoader loader)
     {
-        this.sprite = new Sprite(loader.loadImage("res/hog.png"), 32, 8);
+        this.sprite = new Sprite(loader.loadImage("hog.png"), 32, 8);
         this.rigid = SDL_Rect(x, y, 32, 32);
     }
 
@@ -135,7 +208,8 @@ void main()
 {
     Window.init("Hedgehog", 800, 600);
     auto mainscene = new Scene();
-    auto loader = new AssetLoader();
+    auto loader = new DefaultLoader("res/");
+    mainscene.addObject(new Hopper(500, 0, loader));
     mainscene.addObject(new Player(0, 0, loader));
     mainscene.addObject(new Field(Map(IMG_Load("res/chipset.png"), readText("res/maps/map1.json")
             .deserialize!MapInfo, readText("res/chips/chip1.json").deserialize!(ChipInfo[]))));
